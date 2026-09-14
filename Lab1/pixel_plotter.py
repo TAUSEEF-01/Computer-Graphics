@@ -7,22 +7,22 @@ WIDTH, HEIGHT = 960, 720
 
 
 def draw_text(x, y, text):
-    GL.glColor3f(0.75, 0.75, 0.75)
-    GL.glRasterPos2f(x, y)
+    GL.glColor3f(0.75, 0.75, 0.75) # Light gray color for text
+    GL.glRasterPos2f(x, y) # This sets the starting position for drawing the text.
     for character in text:
         GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_8_BY_13, ord(character))
 
 
 def draw_grid():
     GL.glColor3f(0.12, 0.12, 0.12)
-    GL.glBegin(GL.GL_LINES)
+    GL.glBegin(GL.GL_LINES) # Start receiving the endpoints of lines.
     for x in range(-480, 480, 20):
-        GL.glVertex2f(x + 0.5, -360)
+        GL.glVertex2f(x + 0.5, -360) # The extra 0.5 aligns the line with the centers of device pixels.
         GL.glVertex2f(x + 0.5, 360)
     for y in range(-360, 360, 20):
-        GL.glVertex2f(-480, y + 0.5)
+        GL.glVertex2f(-480, y + 0.5) # These supply the endpoints of a horizontal line.
         GL.glVertex2f(480, y + 0.5)
-    GL.glEnd()
+    GL.glEnd() # This ends the group of line-drawing instructions started by glBegin().
 
     # Draw the x and y axes brighter than the grid.
     GL.glColor3f(0.5, 0.5, 0.5)
@@ -47,8 +47,8 @@ def draw_grid():
 def plot_pixel(x, y, red, green, blue):
     """Draw one device pixel with RGB intensities from 0.0 to 1.0."""
     GL.glColor3f(red, green, blue)
-    GL.glPointSize(1)
-    GL.glBegin(GL.GL_POINTS)
+    GL.glPointSize(1) # This sets the point size to one device pixel.
+    GL.glBegin(GL.GL_POINTS) # This tells OpenGL that the positions supplied next represent individual points.
     # Offset by half a unit to land at the center of a device pixel.
     GL.glVertex2f(x + 0.5, y + 0.5)
     GL.glEnd()
