@@ -9,6 +9,7 @@ from OpenGL import GL, GLUT
 WIDTH, HEIGHT = 960, 720
 X_MIN, X_MAX = -480, 479
 Y_MIN, Y_MAX = -360, 359
+WHITE = (255, 255, 255)
 
 
 def validate_pixel(x, y, red, green, blue):
@@ -34,10 +35,19 @@ def plot_pixel(x, y, red, green, blue):
     GL.glEnd()
 
 
+def plot_pixel_block(x, y, red, green, blue):
+    """Draw a 3x3 block with the requested pixel at its center."""
+    validate_pixel(x, y, red, green, blue)
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            if X_MIN <= x + dx <= X_MAX and Y_MIN <= y + dy <= Y_MAX:
+                plot_pixel(x + dx, y + dy, red, green, blue)
+
+
 class GraphPaper:
     def __init__(self, pixels):
         self.pixels = {(x, y): (r, g, b) for x, y, r, g, b in pixels}
-        self.color = pixels[-1][2:] if pixels else (255, 0, 0)
+        self.color = pixels[-1][2:] if pixels else WHITE
         self.show_grid = True
         self.viewport = (0, 0, WIDTH, HEIGHT)
         self.window_height = HEIGHT
@@ -45,7 +55,7 @@ class GraphPaper:
 
     @staticmethod
     def text(x, y, message):
-        GL.glColor3ub(45, 55, 65)
+        GL.glColor3ub(190, 200, 210)
         GL.glRasterPos2f(x, y)
         for character in message:
             GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_8_BY_13, ord(character))
@@ -66,14 +76,14 @@ class GraphPaper:
         GL.glLineWidth(1.0)
         GL.glBegin(GL.GL_LINES)
         for x in range(X_MIN, X_MAX + 1, 20):
-            GL.glColor3ub(*(195, 205, 215) if x % 100 == 0 else (231, 236, 241))
+            GL.glColor3ub(*(45, 50, 60) if x % 100 == 0 else (18, 20, 28))
             GL.glVertex2f(x + 0.5, Y_MIN)
             GL.glVertex2f(x + 0.5, Y_MAX + 1)
         for y in range(Y_MIN, Y_MAX + 1, 20):
-            GL.glColor3ub(*(195, 205, 215) if y % 100 == 0 else (231, 236, 241))
+            GL.glColor3ub(*(45, 50, 60) if y % 100 == 0 else (18, 20, 28))
             GL.glVertex2f(X_MIN, y + 0.5)
             GL.glVertex2f(X_MAX + 1, y + 0.5)
-        GL.glColor3ub(75, 90, 110)
+        GL.glColor3ub(110, 120, 135)
         GL.glVertex2f(X_MIN, 0.5)
         GL.glVertex2f(X_MAX + 1, 0.5)
         GL.glVertex2f(0.5, Y_MIN)
@@ -100,7 +110,7 @@ class GraphPaper:
             self.text(-460, -340, f"Last pixel: ({x}, {y})  RGB({r}, {g}, {b})")
         # Draw pixels last so their specified color also wins over grid/labels.
         for (x, y), (r, g, b) in self.pixels.items():
-            plot_pixel(x, y, r, g, b)
+            plot_pixel_block(x, y, r, g, b)
 
     def display(self):
         self.render()
@@ -134,7 +144,7 @@ def verify_framebuffer(app):
     samples = [
         (-480, -360, 255, 0, 0), (479, -360, 0, 255, 0),
         (-480, 359, 0, 0, 255), (479, 359, 255, 255, 0),
-        (0, 0, 17, 83, 201), (100, 100, 255, 0, 0),
+        (0, 0, 17, 83, 201), (100, 100, *WHITE),
     ]
     app.pixels = {(x, y): (r, g, b) for x, y, r, g, b in samples}
     app.render()
@@ -154,25 +164,25 @@ def verify_framebuffer(app):
     app.show_grid = False
     app.render()
     GL.glFinish()
-    for dx in (-1, 0, 1):
-        for dy in (-1, 0, 1):
-            expected = (255, 0, 0) if (dx, dy) == (0, 0) else (255, 255, 255)
+    for dx in range(-2, 3):
+        for dy in range(-2, 3):
+            expected = WHITE if abs(dx) <= 1 and abs(dy) <= 1 else (0, 0, 0)
             actual = read_pixel(100 + dx, 100 + dy)
             if actual != expected:
-                raise RuntimeError(f"Single-pixel coverage failed at offset {(dx, dy)}.")
+                raise RuntimeError(f"Centered 3x3 coverage failed at offset {(dx, dy)}.")
     renderer = GL.glGetString(GL.GL_RENDERER).decode()
-    print(f"PASS: six pixel/color checks and nine single-pixel coverage checks. Renderer: {renderer}")
+    print(f"PASS: six pixel/color checks and 25 centered 3x3 coverage checks. Renderer: {renderer}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pixel", nargs=5, type=int, action="append",
                         metavar=("X", "Y", "R", "G", "B"),
-                        help="Plot a pixel; repeat for multiple pixels. RGB is 0..255.")
+                        help="Plot a centered 3x3 pixel block; repeat for multiple blocks. RGB is 0..255.")
     parser.add_argument("--self-test", action="store_true",
                         help="Verify real OpenGL framebuffer coordinates/colors, then exit.")
     args = parser.parse_args()
-    pixels = args.pixel if args.pixel is not None else [(100, 100, 255, 0, 0)]
+    pixels = args.pixel if args.pixel is not None else [(100, 100, *WHITE)]
     try:
         for pixel in pixels:
             validate_pixel(*pixel)
@@ -187,7 +197,7 @@ def main():
     window = GLUT.glutCreateWindow(b"Lab 1 - Graph Paper and RGB Pixel Plotting")
     GLUT.glutSetOption(GLUT.GLUT_ACTION_ON_WINDOW_CLOSE,
                        GLUT.GLUT_ACTION_GLUTMAINLOOP_RETURNS)
-    GL.glClearColor(1.0, 1.0, 1.0, 1.0)
+    GL.glClearColor(0.0, 0.0, 0.0, 1.0)
     # Keep exact RGB values and one-pixel coverage (no smoothing or dithering).
     for capability in (GL.GL_DITHER, GL.GL_POINT_SMOOTH, GL.GL_LINE_SMOOTH,
                        GL.GL_BLEND, GL.GL_MULTISAMPLE, GL.GL_DEPTH_TEST):

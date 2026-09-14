@@ -6,17 +6,17 @@ From the Computer-Graphics project directory in PowerShell:
 
 ```powershell
 .\Lab1\run.ps1
-.\Lab1\run.ps1 --pixel 100 100 255 0 0
+.\Lab1\run.ps1 --pixel 100 100 255 255 255
 .\Lab1\run.ps1 --pixel -200 80 0 255 0 --pixel 150 -100 0 0 255
 ```
 
 If PowerShell script execution is disabled, run Python directly:
 
 ```powershell
-& .\.venv\Scripts\python.exe .\Lab1\pixel_plotter.py --pixel 100 100 255 0 0
+& .\.venv\Scripts\python.exe .\Lab1\pixel_plotter.py --pixel 100 100 255 255 255
 ```
 
-The default plots one red pixel at (100, 100). Each `--pixel` takes **x y red green blue**; RGB channels are integers from 0 to 255. Repeat this option to plot several pixels. Click to add pixels in the last supplied color. **C** clears plotted pixels, **G** toggles the grid, and **Esc** or the close button exits. A true single pixel is small: find it at the specified grid intersection and read the last-pixel status at the bottom.
+The background is black. The default plots a **white 3×3 block centered at (100, 100)**: its nine pixels span x=99..101 and y=99..101. Each `--pixel` takes **x y red green blue** and draws a centered 3×3 block; RGB channels are integers from 0 to 255. Repeat this option to plot several blocks. Click to add blocks in the last supplied color (white by default). **C** clears plotted pixels, **G** toggles the grid, and **Esc** or the close button exits. Read the center coordinate in the last-pixel status at the bottom. Blocks at the canvas boundary are clipped to valid coordinates.
 
 ## Coordinate system
 
@@ -30,7 +30,7 @@ The reusable plotting function is:
 plot_pixel(x, y, red, green, blue)
 ```
 
-Call it with an active OpenGL context and the projection above, during rendering. The application keeps plotted pixels in a dictionary and redraws them whenever GLUT requests a repaint.
+Call it with an active OpenGL context and the projection above, during rendering. `plot_pixel()` draws one device pixel. The application calls `plot_pixel_block()` to draw that center pixel and its eight neighbors in the same color, forming a 3×3 block. It stores center coordinates in a dictionary and redraws the blocks whenever GLUT requests a repaint.
 
 ## Raster graphics overview
 
@@ -68,4 +68,4 @@ Dependency references: [PyOpenGL installation](https://pyopengl.sourceforge.net/
 & .\.venv\Scripts\python.exe .\Lab1\pixel_plotter.py --self-test
 ```
 
-This briefly creates an OpenGL window and reads back six rendered pixels, including the four coordinate corners and the origin, to check the exact RGB colors and coordinate mapping. Nine additional readbacks check that the red point covers exactly one pixel and leaves its eight neighbors white with the grid hidden. It exits after reporting the result.
+This briefly creates an OpenGL window and reads back six rendered pixels, including the four coordinate corners and the origin, to check the exact RGB colors and coordinate mapping. Another 25 readbacks verify that the centered block covers exactly nine white pixels and the surrounding border stays black with the grid hidden. It exits after reporting the result.
