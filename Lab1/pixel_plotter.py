@@ -1,223 +1,93 @@
-"""Lab 1: a Cartesian graph-paper window and one-device-pixel RGB plotting."""
+﻿"""Lab 1: graph paper with nine white pixels centered at (0, 0)."""
 
-import argparse
-import ctypes
 import sys
-
 from OpenGL import GL, GLUT
 
 WIDTH, HEIGHT = 960, 720
-X_MIN, X_MAX = -480, 479
-Y_MIN, Y_MAX = -360, 359
-WHITE = (255, 255, 255)
 
 
-def validate_pixel(x, y, red, green, blue):
-    """Use integer coordinates and RGB channels in the inclusive range 0..255."""
-    values = (x, y, red, green, blue)
-    if any(type(value) is not int for value in values):
-        raise ValueError("Coordinates and RGB channels must be integers.")
-    if not X_MIN <= x <= X_MAX or not Y_MIN <= y <= Y_MAX:
-        raise ValueError(f"Coordinates must be x={X_MIN}..{X_MAX}, y={Y_MIN}..{Y_MAX}.")
-    if any(not 0 <= channel <= 255 for channel in (red, green, blue)):
-        raise ValueError("RGB channels must be in 0..255.")
-    return values
+def draw_text(x, y, text):
+    GL.glColor3f(0.75, 0.75, 0.75)
+    GL.glRasterPos2f(x, y)
+    for character in text:
+        GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_8_BY_13, ord(character))
+
+
+def draw_grid():
+    GL.glColor3f(0.12, 0.12, 0.12)
+    GL.glBegin(GL.GL_LINES)
+    for x in range(-480, 480, 20):
+        GL.glVertex2f(x + 0.5, -360)
+        GL.glVertex2f(x + 0.5, 360)
+    for y in range(-360, 360, 20):
+        GL.glVertex2f(-480, y + 0.5)
+        GL.glVertex2f(480, y + 0.5)
+    GL.glEnd()
+
+    # Draw the x and y axes brighter than the grid.
+    GL.glColor3f(0.5, 0.5, 0.5)
+    GL.glBegin(GL.GL_LINES)
+    GL.glVertex2f(-480, 0.5)
+    GL.glVertex2f(480, 0.5)
+    GL.glVertex2f(0.5, -360)
+    GL.glVertex2f(0.5, 360)
+    GL.glEnd()
+
+    for x in range(-400, 401, 100):
+        if x != 0:
+            draw_text(x + 3, -17, str(x))
+    for y in range(-300, 301, 100):
+        if y != 0:
+            draw_text(7, y + 3, str(y))
+    draw_text(7, -17, "0")
+    draw_text(460, 7, "x")
+    draw_text(7, 340, "y")
 
 
 def plot_pixel(x, y, red, green, blue):
-    """Draw one pixel. Call only after creating an OpenGL context/projection."""
-    validate_pixel(x, y, red, green, blue)
-    GL.glPointSize(1.0)
-    GL.glColor3ub(red, green, blue)
+    """Draw one device pixel with RGB intensities from 0.0 to 1.0."""
+    GL.glColor3f(red, green, blue)
+    GL.glPointSize(1)
     GL.glBegin(GL.GL_POINTS)
-    # Put the vertex at the CENTER of its device pixel, away from raster edges.
+    # Offset by half a unit to land at the center of a device pixel.
     GL.glVertex2f(x + 0.5, y + 0.5)
     GL.glEnd()
 
 
-def plot_pixel_block(x, y, red, green, blue):
-    """Draw a 3x3 block with the requested pixel at its center."""
-    validate_pixel(x, y, red, green, blue)
-    for dx in (-1, 0, 1):
-        for dy in (-1, 0, 1):
-            if X_MIN <= x + dx <= X_MAX and Y_MIN <= y + dy <= Y_MAX:
-                plot_pixel(x + dx, y + dy, red, green, blue)
+def display():
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT)
+    draw_grid()
+
+    # (0, 0) and its eight neighbors: exactly nine white pixels.
+    for x in range(-1, 2):
+        for y in range(-1, 2):
+            plot_pixel(x, y, 1.0, 1.0, 1.0)
+
+    GLUT.glutSwapBuffers()
 
 
-class GraphPaper:
-    def __init__(self, pixels):
-        self.pixels = {(x, y): (r, g, b) for x, y, r, g, b in pixels}
-        self.color = pixels[-1][2:] if pixels else WHITE
-        self.show_grid = True
-        self.viewport = (0, 0, WIDTH, HEIGHT)
-        self.window_height = HEIGHT
-        self.last_pixel = pixels[-1] if pixels else None
-
-    @staticmethod
-    def text(x, y, message):
-        GL.glColor3ub(190, 200, 210)
-        GL.glRasterPos2f(x, y)
-        for character in message:
-            GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_8_BY_13, ord(character))
-
-    def reshape(self, width, height):
-        # A fixed 960x720 viewport preserves one logical pixel = one device pixel.
-        # Smaller windows clip the canvas; larger ones add centered margins.
-        self.window_height = height
-        self.viewport = ((width - WIDTH) // 2, (height - HEIGHT) // 2, WIDTH, HEIGHT)
-        GL.glViewport(*self.viewport)
-        GL.glMatrixMode(GL.GL_PROJECTION)
-        GL.glLoadIdentity()
-        GL.glOrtho(X_MIN, X_MAX + 1, Y_MIN, Y_MAX + 1, -1, 1)
-        GL.glMatrixMode(GL.GL_MODELVIEW)
-        GL.glLoadIdentity()
-
-    def grid(self):
-        GL.glLineWidth(1.0)
-        GL.glBegin(GL.GL_LINES)
-        for x in range(X_MIN, X_MAX + 1, 20):
-            GL.glColor3ub(*(45, 50, 60) if x % 100 == 0 else (18, 20, 28))
-            GL.glVertex2f(x + 0.5, Y_MIN)
-            GL.glVertex2f(x + 0.5, Y_MAX + 1)
-        for y in range(Y_MIN, Y_MAX + 1, 20):
-            GL.glColor3ub(*(45, 50, 60) if y % 100 == 0 else (18, 20, 28))
-            GL.glVertex2f(X_MIN, y + 0.5)
-            GL.glVertex2f(X_MAX + 1, y + 0.5)
-        GL.glColor3ub(110, 120, 135)
-        GL.glVertex2f(X_MIN, 0.5)
-        GL.glVertex2f(X_MAX + 1, 0.5)
-        GL.glVertex2f(0.5, Y_MIN)
-        GL.glVertex2f(0.5, Y_MAX + 1)
-        GL.glEnd()
-        for x in range(-400, 401, 100):
-            if x:
-                self.text(x + 3, -17, str(x))
-        for y in range(-300, 301, 100):
-            if y:
-                self.text(7, y + 3, str(y))
-        self.text(7, -17, "0")
-        self.text(460, 7, "x")
-        self.text(7, 340, "y")
-
-    def render(self):
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
-        if self.show_grid:
-            self.grid()
-        self.text(-460, 334, "LAB 1 | x: -480..479 | y: -360..359 | RGB: 0..255")
-        self.text(-460, 314, "Click: plot | C: clear | G: grid | Esc: exit")
-        if self.last_pixel:
-            x, y, r, g, b = self.last_pixel
-            self.text(-460, -340, f"Last pixel: ({x}, {y})  RGB({r}, {g}, {b})")
-        # Draw pixels last so their specified color also wins over grid/labels.
-        for (x, y), (r, g, b) in self.pixels.items():
-            plot_pixel_block(x, y, r, g, b)
-
-    def display(self):
-        self.render()
-        GLUT.glutSwapBuffers()
-
-    def mouse(self, button, state, mouse_x, mouse_y):
-        if button != GLUT.GLUT_LEFT_BUTTON or state != GLUT.GLUT_DOWN:
-            return
-        viewport_x, viewport_y, _, _ = self.viewport
-        x = mouse_x - viewport_x + X_MIN
-        y = self.window_height - 1 - mouse_y - viewport_y + Y_MIN
-        if X_MIN <= x <= X_MAX and Y_MIN <= y <= Y_MAX:
-            self.pixels[x, y] = self.color
-            self.last_pixel = (x, y, *self.color)
-            print(f"Pixel ({x}, {y}), RGB{self.color}", flush=True)
-            GLUT.glutPostRedisplay()
-
-    def keyboard(self, key, _x, _y):
-        if key == b"\x1b":
-            GLUT.glutLeaveMainLoop()
-        elif key.lower() == b"c":
-            self.pixels.clear()
-            self.last_pixel = None
-        elif key.lower() == b"g":
-            self.show_grid = not self.show_grid
-        GLUT.glutPostRedisplay()
-
-
-def verify_framebuffer(app):
-    """Verify actual raster output, including all four coordinate boundaries."""
-    samples = [
-        (-480, -360, 255, 0, 0), (479, -360, 0, 255, 0),
-        (-480, 359, 0, 0, 255), (479, 359, 255, 255, 0),
-        (0, 0, 17, 83, 201), (100, 100, *WHITE),
-    ]
-    app.pixels = {(x, y): (r, g, b) for x, y, r, g, b in samples}
-    app.render()
-    GL.glFinish()
-    GL.glReadBuffer(GL.GL_BACK)
-    GL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1)
-    def read_pixel(x, y):
-        buffer = ctypes.create_string_buffer(3)
-        GL.glReadPixels(x - X_MIN, y - Y_MIN, 1, 1,
-                        GL.GL_RGB, GL.GL_UNSIGNED_BYTE, buffer)
-        return tuple(buffer.raw)
-
-    for x, y, r, g, b in samples:
-        actual = read_pixel(x, y)
-        if actual != (r, g, b):
-            raise RuntimeError(f"Pixel ({x}, {y}): expected {(r, g, b)}, got {actual}")
-    app.show_grid = False
-    app.render()
-    GL.glFinish()
-    for dx in range(-2, 3):
-        for dy in range(-2, 3):
-            expected = WHITE if abs(dx) <= 1 and abs(dy) <= 1 else (0, 0, 0)
-            actual = read_pixel(100 + dx, 100 + dy)
-            if actual != expected:
-                raise RuntimeError(f"Centered 3x3 coverage failed at offset {(dx, dy)}.")
-    renderer = GL.glGetString(GL.GL_RENDERER).decode()
-    print(f"PASS: six pixel/color checks and 25 centered 3x3 coverage checks. Renderer: {renderer}")
+def reshape(width, height):
+    # Keep one coordinate unit equal to one device pixel when resized.
+    GL.glViewport((width - WIDTH) // 2, (height - HEIGHT) // 2, WIDTH, HEIGHT)
+    GL.glMatrixMode(GL.GL_PROJECTION)
+    GL.glLoadIdentity()
+    GL.glOrtho(-480, 480, -360, 360, -1, 1)
+    GL.glMatrixMode(GL.GL_MODELVIEW)
+    GL.glLoadIdentity()
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--pixel", nargs=5, type=int, action="append",
-                        metavar=("X", "Y", "R", "G", "B"),
-                        help="Plot a centered 3x3 pixel block; repeat for multiple blocks. RGB is 0..255.")
-    parser.add_argument("--self-test", action="store_true",
-                        help="Verify real OpenGL framebuffer coordinates/colors, then exit.")
-    args = parser.parse_args()
-    pixels = args.pixel if args.pixel is not None else [(100, 100, *WHITE)]
-    try:
-        for pixel in pixels:
-            validate_pixel(*pixel)
-    except ValueError as error:
-        parser.error(str(error))
-    if not bool(GLUT.glutInit):
-        parser.exit(1, "GLUT is unavailable. Reinstall the packages in requirements.txt.\n")
-    # argparse consumes application options; pass only the program name to GLUT.
     GLUT.glutInit([sys.argv[0]])
     GLUT.glutInitDisplayMode(GLUT.GLUT_DOUBLE | GLUT.GLUT_RGB)
     GLUT.glutInitWindowSize(WIDTH, HEIGHT)
-    window = GLUT.glutCreateWindow(b"Lab 1 - Graph Paper and RGB Pixel Plotting")
+    GLUT.glutCreateWindow(b"Lab 1 - White 3x3 Pixels at the Origin")
     GLUT.glutSetOption(GLUT.GLUT_ACTION_ON_WINDOW_CLOSE,
                        GLUT.GLUT_ACTION_GLUTMAINLOOP_RETURNS)
     GL.glClearColor(0.0, 0.0, 0.0, 1.0)
-    # Keep exact RGB values and one-pixel coverage (no smoothing or dithering).
-    for capability in (GL.GL_DITHER, GL.GL_POINT_SMOOTH, GL.GL_LINE_SMOOTH,
-                       GL.GL_BLEND, GL.GL_MULTISAMPLE, GL.GL_DEPTH_TEST):
-        GL.glDisable(capability)
-    app = GraphPaper(pixels)
-    app.reshape(WIDTH, HEIGHT)
-    GLUT.glutDisplayFunc(app.display)
-    GLUT.glutReshapeFunc(app.reshape)
-    GLUT.glutMouseFunc(app.mouse)
-    GLUT.glutKeyboardFunc(app.keyboard)
-    if args.self_test:
-        try:
-            verify_framebuffer(app)
-        finally:
-            GLUT.glutDestroyWindow(window)
-        return
-    print("Canvas: x=-480..479, y=-360..359. RGB channels: 0..255.")
-    for pixel in pixels:
-        print(f"Pixel ({pixel[0]}, {pixel[1]}), RGB{tuple(pixel[2:])}")
-    print("Click to plot with the last RGB color. C: clear; G: grid; Esc: exit.")
+    GL.glDisable(GL.GL_DITHER)
+    reshape(WIDTH, HEIGHT)
+    GLUT.glutDisplayFunc(display)
+    GLUT.glutReshapeFunc(reshape)
     GLUT.glutMainLoop()
 
 
