@@ -74,6 +74,30 @@ def display():
     GLUT.glutSwapBuffers()
 
 
+def reshape(width, height):
+    """Preserve the 16:9 logical raster if the window is resized."""
+    target_aspect = LOGICAL_WIDTH / LOGICAL_HEIGHT
+    window_aspect = width / height if height else target_aspect
+
+    if window_aspect > target_aspect:
+        viewport_height = height
+        viewport_width = round(height * target_aspect)
+        viewport_x = (width - viewport_width) // 2
+        viewport_y = 0
+    else:
+        viewport_width = width
+        viewport_height = round(width / target_aspect)
+        viewport_x = 0
+        viewport_y = (height - viewport_height) // 2
+
+    GL.glViewport(viewport_x, viewport_y, viewport_width, viewport_height)
+    GL.glMatrixMode(GL.GL_PROJECTION)
+    GL.glLoadIdentity()
+    GL.glOrtho(X_MIN, X_MAX + 1, Y_MIN, Y_MAX + 1, -1, 1)
+    GL.glMatrixMode(GL.GL_MODELVIEW)
+    GL.glLoadIdentity()
+
+
 def main():
     GLUT.glutInit([sys.argv[0]])
     GLUT.glutInitDisplayMode(GLUT.GLUT_DOUBLE | GLUT.GLUT_RGB)
@@ -86,16 +110,9 @@ def main():
 
     GL.glClearColor(0.0, 0.0, 0.0, 1.0)
     GL.glDisable(GL.GL_DITHER)
-
-    # Map the 96 x 54 logical raster onto the fixed 960 x 540 window.
-    GL.glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
-    GL.glMatrixMode(GL.GL_PROJECTION)
-    GL.glLoadIdentity()
-    GL.glOrtho(X_MIN, X_MAX + 1, Y_MIN, Y_MAX + 1, -1, 1)
-    GL.glMatrixMode(GL.GL_MODELVIEW)
-    GL.glLoadIdentity()
-
+    reshape(WINDOW_WIDTH, WINDOW_HEIGHT)
     GLUT.glutDisplayFunc(display)
+    GLUT.glutReshapeFunc(reshape)
     GLUT.glutMainLoop()
 
 
