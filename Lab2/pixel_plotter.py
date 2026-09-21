@@ -21,10 +21,10 @@ def draw_grid():
     # Draw the coordinate axes more brightly than the grid.
     GL.glColor3f(0.5, 0.5, 0.5)
     GL.glBegin(GL.GL_LINES)
-    GL.glVertex1i(X_MIN, 0)
-    GL.glVertex1i(X_MAX + 1, 0)
-    GL.glVertex1i(0, Y_MIN)
-    GL.glVertex1i(0, Y_MAX + 1)
+    GL.glVertex2i(X_MIN, 0)
+    GL.glVertex2i(X_MAX + 1, 0)
+    GL.glVertex2i(0, Y_MIN)
+    GL.glVertex2i(0, Y_MAX + 1)
     GL.glEnd()
 
 
@@ -41,10 +41,14 @@ def dda_line(x0, y0, x1, y1, red=1.0, green=1.0, blue=1.0):
     """Rasterize a line from (x0, y0) to (x1, y1) using DDA."""
     dx = x1 - x0
     dy = y1 - y0
-    steps = max(abs(dx), abs(dy))
 
-    x_increment = dx / steps if steps else 0
-    y_increment = dy / steps if steps else 0
+    if abs(x1 - x0) >= abs(y1 - y0):
+        step = abs(x1 - x0)
+    else:
+        step = abs(y1 - y0)
+
+    x_increment = dx / step if step else 0
+    y_increment = dy / step if step else 0
     x = float(x0)
     y = float(y0)
 
@@ -52,9 +56,12 @@ def dda_line(x0, y0, x1, y1, red=1.0, green=1.0, blue=1.0):
     GL.glPointSize(PIXEL_SIZE)
     GL.glBegin(GL.GL_POINTS)
 
-    # Include both endpoints, hence steps + 1 samples.
-    for _ in range(steps + 1):
-        GL.glVertex1i(x + 0.5 * sign(x), y + 0.5 * sign(y))
+    # Include both endpoints, hence step + 1 samples.
+    for _ in range(step + 1):
+        GL.glVertex2i(
+            int(x + 0.5 * sign(x)),
+            int(y + 0.5 * sign(y)),
+        )
         x += x_increment
         y += y_increment
 
