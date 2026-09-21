@@ -21,48 +21,44 @@ def draw_grid():
     # Draw the coordinate axes more brightly than the grid.
     GL.glColor3f(0.5, 0.5, 0.5)
     GL.glBegin(GL.GL_LINES)
-    GL.glVertex2i(X_MIN, 0)
-    GL.glVertex2i(X_MAX + 1, 0)
-    GL.glVertex2i(0, Y_MIN)
-    GL.glVertex2i(0, Y_MAX + 1)
+    GL.glVertex1i(X_MIN, 0)
+    GL.glVertex1i(X_MAX + 1, 0)
+    GL.glVertex1i(0, Y_MIN)
+    GL.glVertex1i(0, Y_MAX + 1)
     GL.glEnd()
 
 
-def plot_pixel(x, y, red=1.0, green=1.0, blue=1.0):
-    """Fill one logical pixel (a 10 x 10 monitor-pixel block)."""
-    if not (X_MIN <= x <= X_MAX and Y_MIN <= y <= Y_MAX):
-        return
-
-    GL.glColor3f(red, green, blue)
-    GL.glBegin(GL.GL_QUADS)
-    GL.glVertex2i(x, y)
-    GL.glVertex2i(x + 1, y)
-    GL.glVertex2i(x + 1, y + 1)
-    GL.glVertex2i(x, y + 1)
-    GL.glEnd()
+def sign(value):
+    """Return the sign of a number."""
+    if value > 0:
+        return 1
+    if value < 0:
+        return -1
+    return 0
 
 
-def dda_line(x1, y1, x2, y2, red=1.0, green=1.0, blue=1.0):
-    """Rasterize a line from (x1, y1) to (x2, y2) using DDA."""
-    dx = x2 - x1
-    dy = y2 - y1
+def dda_line(x0, y0, x1, y1, red=1.0, green=1.0, blue=1.0):
+    """Rasterize a line from (x0, y0) to (x1, y1) using DDA."""
+    dx = x1 - x0
+    dy = y1 - y0
     steps = max(abs(dx), abs(dy))
 
-    # A zero-length line still contains one pixel.
-    if steps == 0:
-        plot_pixel(round(x1), round(y1), red, green, blue)
-        return
+    x_increment = dx / steps if steps else 0
+    y_increment = dy / steps if steps else 0
+    x = float(x0)
+    y = float(y0)
 
-    x_increment = dx / steps
-    y_increment = dy / steps
-    x = float(x1)
-    y = float(y1)
+    GL.glColor3f(red, green, blue)
+    GL.glPointSize(PIXEL_SIZE)
+    GL.glBegin(GL.GL_POINTS)
 
     # Include both endpoints, hence steps + 1 samples.
     for _ in range(steps + 1):
-        plot_pixel(round(x), round(y), red, green, blue)
+        GL.glVertex1i(x + 0.5 * sign(x), y + 0.5 * sign(y))
         x += x_increment
         y += y_increment
+
+    GL.glEnd()
 
 
 def display():
