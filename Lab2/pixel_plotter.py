@@ -37,7 +37,7 @@ def sign(value):
     return 0
 
 
-def dda_line(x0, y0, x1, y1, red=1.0, green=1.0, blue=1.0):
+def dda_line(x0, y0, x1, y1):
     """Rasterize a line from (x0, y0) to (x1, y1) using DDA."""
     dx = x1 - x0
     dy = y1 - y0
@@ -49,19 +49,16 @@ def dda_line(x0, y0, x1, y1, red=1.0, green=1.0, blue=1.0):
 
     x_increment = dx / step if step else 0
     y_increment = dy / step if step else 0
-    x = float(x0)
-    y = float(y0)
+    x = x0
+    y = y0
 
-    GL.glColor3f(red, green, blue)
+    GL.glColor3f(1.0, 1.0, 1.0)
     GL.glPointSize(PIXEL_SIZE)
     GL.glBegin(GL.GL_POINTS)
 
     # Include both endpoints, hence step + 1 samples.
     for _ in range(step + 1):
-        GL.glVertex2i(
-            int(x + 0.5 * sign(x)),
-            int(y + 0.5 * sign(y)),
-        )
+        GL.glVertex2i(int(x + 0.5 * sign(x)), int(y + 0.5 * sign(y)))
         x += x_increment
         y += y_increment
 
@@ -72,8 +69,8 @@ def display():
     GL.glClear(GL.GL_COLOR_BUFFER_BIT)
     draw_grid()
 
-    dda_line(-5, 7, 6, -8, 1.0, 1.0, 1.0)
-
+    dda_line(-5, 7, 6, -8)
+    
     GLUT.glutSwapBuffers()
 
 
