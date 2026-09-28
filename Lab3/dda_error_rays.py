@@ -74,8 +74,8 @@ def draw_dda_line(x0, y0, x1, y1, error, max_error):
     y_increment = dy / step if step else 0
 
     brightness = error / max_error if max_error else 0.0
-    GL.glColor3f(brightness, brightness, brightness)
-    GL.glPointSize(1.0)
+    GL.glColor3d(brightness, brightness, brightness)
+    GL.glPointSize(2.0)
     GL.glBegin(GL.GL_POINTS)
 
     x = x0
