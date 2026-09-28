@@ -8,8 +8,8 @@ from OpenGL import GL, GLUT
 # of physical monitor pixels, producing a 960 x 540 window.
 LOGICAL_WIDTH, LOGICAL_HEIGHT = 96, 54
 PIXEL_SIZE = 10
-WINDOW_WIDTH = LOGICAL_WIDTH * PIXEL_SIZE
-WINDOW_HEIGHT = LOGICAL_HEIGHT * PIXEL_SIZE
+WINDOW_WIDTH = LOGICAL_WIDTH * 10
+WINDOW_HEIGHT = LOGICAL_HEIGHT * 10
 
 X_MIN = -(LOGICAL_WIDTH // 2)       # -48
 X_MAX = X_MIN + LOGICAL_WIDTH - 1   #  47
@@ -58,6 +58,7 @@ def dda_line(x0, y0, x1, y1):
 
     # Include both endpoints, hence step + 1 samples.
     for _ in range(step + 1):
+        print(f"Plotting point: ({int(x + 0.5 * sign(x))}, {int(y + 0.5 * sign(y))})")
         GL.glVertex2i(int(x + 0.5 * sign(x)), int(y + 0.5 * sign(y)))
         x += x_increment
         y += y_increment
