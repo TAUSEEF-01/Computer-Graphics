@@ -33,7 +33,14 @@ The program works in two passes:
 
    Each point's non-negative error magnitude is added to `line_total_error`. This sum becomes that line's error. After calculating all 36 line totals, the largest total becomes `MAX_ERROR`. At 45 and 135 degrees, x and y advance by exact integer amounts together, so their total error is zero.
 
-2. `draw_dda_line()` runs DDA again. Each entire line receives the grayscale color `line_total_error / MAX_ERROR`. A line with a small total error is dark, and the line with the largest total error is white.
+2. `draw_dda_line()` runs DDA again. It first normalizes each line with `line_total_error / MAX_ERROR`. Most nonzero normalized results fall between about 0.77 and 1.0, which makes them look almost equally white. The program therefore applies a contrast curve before sending the color to OpenGL:
+
+   ```python
+   normalized_error = error / max_error
+   brightness = normalized_error ** 6
+   ```
+
+   This preserves the order of the errors, keeps zero black and the maximum white, and spreads intermediate errors over more visible shades of gray.
 
 The terminal prints every line's endpoint, total error, and normalized brightness. Change `PRINT_POINTS` to `True` to also print every DDA point using the requested format.
 

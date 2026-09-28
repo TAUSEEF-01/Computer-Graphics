@@ -13,6 +13,7 @@ ANGLE_START = 0
 ANGLE_END = 180
 ANGLE_STEP = 5
 NUMBER_OF_LINES = ANGLE_END // ANGLE_STEP  # 180 / 5 = 36 lines
+CONTRAST_POWER = 6
 
 # Set this to True if every calculated DDA point should be printed.
 PRINT_POINTS = False
@@ -34,6 +35,12 @@ def sign(value):
 def round_coordinate(value):
     """Round a coordinate using the rule specified in the activity."""
     return int(value + 0.5 * sign(value))
+
+
+def error_to_brightness(error, max_error):
+    """Spread clustered error values across more visible gray levels."""
+    normalized_error = error / max_error if max_error else 0.0
+    return normalized_error ** CONTRAST_POWER
 
 
 def calculate_line_error(x0, y0, x1, y1):
@@ -73,7 +80,7 @@ def draw_dda_line(x0, y0, x1, y1, error, max_error):
     x_increment = dx / step if step else 0
     y_increment = dy / step if step else 0
 
-    brightness = error / max_error if max_error else 0.0
+    brightness = error_to_brightness(error, max_error)
     GL.glColor3d(brightness, brightness, brightness)
     GL.glPointSize(2.0)
     GL.glBegin(GL.GL_POINTS)
@@ -155,7 +162,8 @@ def main():
             f"Angle {angle:3d} degrees: "
             f"start=({start_x:4d}, {start_y:4d}), "
             f"end=({end_x:4d}, {end_y:4d}), "
-            f"total error={error:.12f}, brightness={error / MAX_ERROR:.6f}"
+            f"total error={error:.12f}, "
+            f"brightness={error_to_brightness(error, MAX_ERROR):.6f}"
         )
 
     GLUT.glutInit([sys.argv[0]])
