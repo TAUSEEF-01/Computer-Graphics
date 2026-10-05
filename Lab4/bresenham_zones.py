@@ -1,4 +1,4 @@
-"""Lab 4: draw a radius-250 circle of DDA lines in eight zone colors."""
+"""Lab 4: draw radius-250 lines using Bresenham in eight zone colors."""
 
 import math
 import sys
@@ -46,76 +46,86 @@ def find_zone(x0, y0, x1, y1):
     return 7 if abs(dx) >= abs(dy) else 6
 
 
-def plot_dda_points(x, y, step, x_increment, y_increment, zone):
-    """Shared pixel plotting; each zone function supplies its increments."""
+def plot_bresenham_points(x, y, major, minor, major_x, major_y,
+                          minor_x, minor_y, zone):
+    """Use an integer decision variable to choose straight/diagonal steps.
+
+    major/minor are the absolute distances along the dominant/other axis.
+    The direction pairs say how to move along each axis for this zone.
+    """
+    decision = 2 * minor - major
+    straight_increment = 2 * minor
+    diagonal_increment = 2 * (minor - major)
+
     GL.glColor3f(*ZONE_COLORS[zone])
     GL.glPointSize(2.0)
     GL.glBegin(GL.GL_POINTS)
-    for _ in range(step + 1):
-        rounded_x = int(x + 0.5 * sign(x))
-        rounded_y = int(y + 0.5 * sign(y))
+    for step in range(major + 1):
         if PRINT_POINTS:
-            print(f"Plotting point: ({rounded_x}, {rounded_y})")
-        GL.glVertex2i(rounded_x, rounded_y)
-        x += x_increment
-        y += y_increment
+            print(f"Plotting point: ({x}, {y})")
+        GL.glVertex2i(x, y)
+        if step == major:
+            break
+
+        # Move along the dominant axis at every step.
+        x += major_x
+        y += major_y
+        if decision >= 0:
+            # Also move along the other axis: a diagonal pixel step.
+            x += minor_x
+            y += minor_y
+            decision += diagonal_increment
+        else:
+            decision += straight_increment
     GL.glEnd()
 
 
 def drawLine_0(x0, y0, x1, y1):
     """Right and up, shallow: x increases by 1."""
     dx, dy = x1 - x0, y1 - y0
-    step = dx
-    plot_dda_points(x0, y0, step, 1, dy / step if step else 0, 0) # x, y, step, x_increment, y_increment, zone
+    plot_bresenham_points(x0, y0, dx, dy, 1, 0, 0, 1, 0)
 
 
 def drawLine_1(x0, y0, x1, y1):
     """Right and up, steep: y increases by 1."""
     dx, dy = x1 - x0, y1 - y0
-    step = dy
-    plot_dda_points(x0, y0, step, dx / step, 1, 1)
+    plot_bresenham_points(x0, y0, dy, dx, 0, 1, 1, 0, 1)
 
 
 def drawLine_2(x0, y0, x1, y1):
     """Left and up, steep: y increases by 1."""
     dx, dy = x1 - x0, y1 - y0
-    step = dy
-    plot_dda_points(x0, y0, step, dx / step, 1, 2)
+    plot_bresenham_points(x0, y0, dy, -dx, 0, 1, -1, 0, 2)
 
 
 def drawLine_3(x0, y0, x1, y1):
     """Left and up, shallow: x decreases by 1."""
     dx, dy = x1 - x0, y1 - y0
-    step = -dx
-    plot_dda_points(x0, y0, step, -1, dy / step, 3)
+    plot_bresenham_points(x0, y0, -dx, dy, -1, 0, 0, 1, 3)
 
 
 def drawLine_4(x0, y0, x1, y1):
     """Left and down, shallow: x decreases by 1."""
     dx, dy = x1 - x0, y1 - y0
-    step = -dx
-    plot_dda_points(x0, y0, step, -1, dy / step, 4)
+    plot_bresenham_points(x0, y0, -dx, -dy, -1, 0, 0, -1, 4)
 
 
 def drawLine_5(x0, y0, x1, y1):
     """Left and down, steep: y decreases by 1."""
     dx, dy = x1 - x0, y1 - y0
-    step = -dy
-    plot_dda_points(x0, y0, step, dx / step, -1, 5)
+    plot_bresenham_points(x0, y0, -dy, -dx, 0, -1, -1, 0, 5)
 
 
 def drawLine_6(x0, y0, x1, y1):
     """Right and down, steep: y decreases by 1."""
     dx, dy = x1 - x0, y1 - y0
-    step = -dy
-    plot_dda_points(x0, y0, step, dx / step, -1, 6)
+    plot_bresenham_points(x0, y0, -dy, dx, 0, -1, 1, 0, 6)
 
 
 def drawLine_7(x0, y0, x1, y1):
     """Right and down, shallow: x increases by 1."""
     dx, dy = x1 - x0, y1 - y0
-    step = dx
-    plot_dda_points(x0, y0, step, 1, dy / step, 7)
+    plot_bresenham_points(x0, y0, dx, -dy, 1, 0, 0, -1, 7)
 
 
 DRAW_FUNCTIONS = (
@@ -161,10 +171,10 @@ def main():
     GLUT.glutInit([sys.argv[0]])
     GLUT.glutInitDisplayMode(GLUT.GLUT_DOUBLE | GLUT.GLUT_RGB)
     GLUT.glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
-    GLUT.glutCreateWindow(b"Lab 4 - Eight DDA Zones")
+    GLUT.glutCreateWindow(b"Lab 4 - Eight Bresenham Zones")
     GLUT.glutSetOption(GLUT.GLUT_ACTION_ON_WINDOW_CLOSE,
                        GLUT.GLUT_ACTION_GLUTMAINLOOP_RETURNS)
-    # Light gray makes every zone color, including black, visible.
+    # White background displays the eight zone colors.
     GL.glClearColor(1.0, 1.0, 1.0, 1.0)
     GL.glDisable(GL.GL_DITHER)
     reshape(WINDOW_WIDTH, WINDOW_HEIGHT)
