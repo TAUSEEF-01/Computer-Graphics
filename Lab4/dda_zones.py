@@ -66,7 +66,7 @@ def drawLine_0(x0, y0, x1, y1):
     """Right and up, shallow: x increases by 1."""
     dx, dy = x1 - x0, y1 - y0
     step = dx
-    plot_dda_points(x0, y0, step, 1, dy / step if step else 0, 0)
+    plot_dda_points(x0, y0, step, 1, dy / step if step else 0, 0) # x, y, step, x_increment, y_increment, zone
 
 
 def drawLine_1(x0, y0, x1, y1):
@@ -165,7 +165,7 @@ def main():
     GLUT.glutSetOption(GLUT.GLUT_ACTION_ON_WINDOW_CLOSE,
                        GLUT.GLUT_ACTION_GLUTMAINLOOP_RETURNS)
     # Light gray makes every zone color, including black, visible.
-    GL.glClearColor(0.65, 0.65, 0.65, 1.0)
+    GL.glClearColor(1.0, 1.0, 1.0, 1.0)
     GL.glDisable(GL.GL_DITHER)
     reshape(WINDOW_WIDTH, WINDOW_HEIGHT)
     GLUT.glutDisplayFunc(display)

@@ -1,5 +1,20 @@
 # Lab 4: eight DDA zones
 
+## C++ version
+
+From the Lab4 directory:
+
+```powershell
+.\build_cpp.ps1
+.\dda_zones.exe
+```
+
+The build script uses `C:\MinGW\bin\g++.exe` and a 32-bit FreeGLUT static library built with that compiler. Headers and the library are installed locally under `.venv/cpp-deps/freeglut-MinGW-rel-v3.0.0-1.tz`. The static build embeds FreeGLUT and the C++ runtime, so no separate FreeGLUT DLL is needed beside the executable.
+
+FreeGLUT source: [TransmissionZero/freeglut-MinGW release 3.0.0-1.tz](https://github.com/TransmissionZero/freeglut-MinGW/tree/rel/v3.0.0-1.tz). To rebuild that dependency, run `mingw32-make SHELL=cmd.exe lib/libfreeglut_static.a` from its source directory.
+
+## Python version
+
 Run from the project directory:
 
 ```powershell
