@@ -17,7 +17,7 @@ dy = -1
 r = 50
 
 def draw8way_symmetry(x, y):
-    """After zone 0 is plotted, draw its seven reflected circle points."""
+    # Swap x/y and change signs to get the matching points around the circle.
     GL.glVertex2i(xc + y, yc + x)
     GL.glVertex2i(xc - y, yc + x)
     GL.glVertex2i(xc - x, yc + y)
@@ -28,9 +28,10 @@ def draw8way_symmetry(x, y):
 
 
 def draw_circle():
-    """Draw zone 0 first, then reflect each point into the other zones."""
+    # Start at the right edge and work toward the 45-degree line.
     x = r
     y = 0
+    # This value decides whether the next step stays level or moves diagonally.
     decision = 3 - 2 * r
 
     GL.glColor3f(0.0, 0.7, 1.0)
@@ -38,32 +39,36 @@ def draw_circle():
     GL.glBegin(GL.GL_POINTS)
 
     while y <= x:
-        # Draw zone 0, then its seven symmetric counterparts.
+        # Draw zone (24 % 8 = 0), then its seven symmetric counterparts.
         GL.glVertex2i(xc + x, yc + y)
         draw8way_symmetry(x, y)
 
+        # Choose the next pixel based on how close it is to the circle.
         if decision < 0:
             y += 1
+            # Keep x and adjust the decision for a vertical step.
             decision += 4 * y + 2
         else:
             x -= 1
             y += 1
+            # Move diagonally and update the decision value.
             decision += 4 * (y - x) + 2
 
     GL.glEnd()
 
 
 def display():
+    # Redraw the whole frame so the old circle position disappears.
     GL.glClear(GL.GL_COLOR_BUFFER_BIT)
     draw_circle()
     GLUT.glutSwapBuffers()
 
 
 def reshape(width, height):
-    """Keep the 960x540 coordinate view centered as the window is resized."""
     scale = min(width / WINDOW_WIDTH, height / WINDOW_HEIGHT)
     viewport_width = round(WINDOW_WIDTH * scale)
     viewport_height = round(WINDOW_HEIGHT * scale)
+    # Center the drawing area if the window has a different aspect ratio.
     GL.glViewport(
         (width - viewport_width) // 2,
         (height - viewport_height) // 2,
@@ -81,9 +86,11 @@ def animate(_value):
     """Move the center and bounce the circle off the window boundaries."""
     global xc, yc, dx, dy
 
+    # Advance the center by its current x/y movement.
     xc += dx
     yc += dy
 
+    # Reverse direction at each edge, keeping the circle inside the window.
     if xc + r >= xmax // 2:
         xc = xmax // 2 - r
         dx = -abs(dx)
@@ -102,6 +109,7 @@ def animate(_value):
 
 
 def main():
+    # Set up a double-buffered RGB window for OpenGL drawing.
     GLUT.glutInit([sys.argv[0]])
     GLUT.glutInitDisplayMode(GLUT.GLUT_DOUBLE | GLUT.GLUT_RGB)
     GLUT.glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
