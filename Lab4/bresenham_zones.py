@@ -46,86 +46,205 @@ def find_zone(x0, y0, x1, y1):
     return 7 if abs(dx) >= abs(dy) else 6
 
 
-def plot_bresenham_points(x, y, major, minor, major_x, major_y,
-                          minor_x, minor_y, zone):
-    """Use an integer decision variable to choose straight/diagonal steps.
-
-    major/minor are the absolute distances along the dominant/other axis.
-    The direction pairs say how to move along each axis for this zone.
-    """
-    decision = 2 * minor - major
-    straight_increment = 2 * minor
-    diagonal_increment = 2 * (minor - major)
-
-    GL.glColor3f(*ZONE_COLORS[zone])
-    GL.glPointSize(2.0)
-    GL.glBegin(GL.GL_POINTS)
-    for step in range(major + 1):
-        if PRINT_POINTS:
-            print(f"Plotting point: ({x}, {y})")
-        GL.glVertex2i(x, y)
-        if step == major:
-            break
-
-        # Move along the dominant axis at every step.
-        x += major_x
-        y += major_y
-        if decision >= 0:
-            # Also move along the other axis: a diagonal pixel step.
-            x += minor_x
-            y += minor_y
-            decision += diagonal_increment
-        else:
-            decision += straight_increment
-    GL.glEnd()
+def drawPixel(x, y):
+    """Submit one pixel inside a GL_POINTS drawing block."""
+    if PRINT_POINTS:
+        print(f"Plotting point: ({x}, {y})")
+    GL.glVertex2i(x, y)
 
 
 def drawLine_0(x0, y0, x1, y1):
-    """Right and up, shallow: x increases by 1."""
-    dx, dy = x1 - x0, y1 - y0
-    plot_bresenham_points(x0, y0, dx, dy, 1, 0, 0, 1, 0) # x, y, major, minor, major_x, major_y, minor_x, minor_y, zone
+    """Zone 0 Bresenham: choose East or North-East at each step."""
+    dx = x1 - x0
+    dy = y1 - y0
+    d = 2 * dy - dx
+    x = x0
+    y = y0
+
+    GL.glColor3f(*ZONE_COLORS[0])
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+
+    drawPixel(x, y)
+    while x < x1:
+        if d < 0:
+            x += 1
+            d += 2 * dy
+        else:
+            x += 1
+            y += 1
+            d += 2 * (dy - dx)
+        drawPixel(x, y)
+
+    GL.glEnd()
 
 
 def drawLine_1(x0, y0, x1, y1):
-    """Right and up, steep: y increases by 1."""
-    dx, dy = x1 - x0, y1 - y0
-    plot_bresenham_points(x0, y0, dy, dx, 0, 1, 1, 0, 1)
+    """Zone 1: choose North or North-East."""
+    dx = x1 - x0
+    dy = y1 - y0
+    d = 2 * dx - dy
+    x = x0
+    y = y0
+
+    GL.glColor3f(*ZONE_COLORS[1])
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+    drawPixel(x, y)
+    while y < y1:
+        if d < 0:
+            y += 1
+            d += 2 * dx
+        else:
+            x += 1
+            y += 1
+            d += 2 * (dx - dy)
+        drawPixel(x, y)
+    GL.glEnd()
 
 
 def drawLine_2(x0, y0, x1, y1):
-    """Left and up, steep: y increases by 1."""
-    dx, dy = x1 - x0, y1 - y0
-    plot_bresenham_points(x0, y0, dy, -dx, 0, 1, -1, 0, 2)
+    """Zone 2: choose North or North-West."""
+    dx = x0 - x1  # Positive horizontal distance to the left.
+    dy = y1 - y0
+    d = 2 * dx - dy
+    x = x0
+    y = y0
+
+    GL.glColor3f(*ZONE_COLORS[2])
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+    drawPixel(x, y)
+    while y < y1:
+        if d < 0:
+            y += 1
+            d += 2 * dx
+        else:
+            x -= 1
+            y += 1
+            d += 2 * (dx - dy)
+        drawPixel(x, y)
+    GL.glEnd()
 
 
 def drawLine_3(x0, y0, x1, y1):
-    """Left and up, shallow: x decreases by 1."""
-    dx, dy = x1 - x0, y1 - y0
-    plot_bresenham_points(x0, y0, -dx, dy, -1, 0, 0, 1, 3)
+    """Zone 3: choose West or North-West."""
+    dx = x0 - x1
+    dy = y1 - y0
+    d = 2 * dy - dx
+    x = x0
+    y = y0
+
+    GL.glColor3f(*ZONE_COLORS[3])
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+    drawPixel(x, y)
+    while x > x1:
+        if d < 0:
+            x -= 1
+            d += 2 * dy
+        else:
+            x -= 1
+            y += 1
+            d += 2 * (dy - dx)
+        drawPixel(x, y)
+    GL.glEnd()
 
 
 def drawLine_4(x0, y0, x1, y1):
-    """Left and down, shallow: x decreases by 1."""
-    dx, dy = x1 - x0, y1 - y0
-    plot_bresenham_points(x0, y0, -dx, -dy, -1, 0, 0, -1, 4)
+    """Zone 4: choose West or South-West."""
+    dx = x0 - x1
+    dy = y0 - y1  # Positive vertical distance downward.
+    d = 2 * dy - dx
+    x = x0
+    y = y0
+
+    GL.glColor3f(*ZONE_COLORS[4])
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+    drawPixel(x, y)
+    while x > x1:
+        if d < 0:
+            x -= 1
+            d += 2 * dy
+        else:
+            x -= 1
+            y -= 1
+            d += 2 * (dy - dx)
+        drawPixel(x, y)
+    GL.glEnd()
 
 
 def drawLine_5(x0, y0, x1, y1):
-    """Left and down, steep: y decreases by 1."""
-    dx, dy = x1 - x0, y1 - y0
-    plot_bresenham_points(x0, y0, -dy, -dx, 0, -1, -1, 0, 5)
+    """Zone 5: choose South or South-West."""
+    dx = x0 - x1
+    dy = y0 - y1
+    d = 2 * dx - dy
+    x = x0
+    y = y0
+
+    GL.glColor3f(*ZONE_COLORS[5])
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+    drawPixel(x, y)
+    while y > y1:
+        if d < 0:
+            y -= 1
+            d += 2 * dx
+        else:
+            x -= 1
+            y -= 1
+            d += 2 * (dx - dy)
+        drawPixel(x, y)
+    GL.glEnd()
 
 
 def drawLine_6(x0, y0, x1, y1):
-    """Right and down, steep: y decreases by 1."""
-    dx, dy = x1 - x0, y1 - y0
-    plot_bresenham_points(x0, y0, -dy, dx, 0, -1, 1, 0, 6)
+    """Zone 6: choose South or South-East."""
+    dx = x1 - x0
+    dy = y0 - y1
+    d = 2 * dx - dy
+    x = x0
+    y = y0
+
+    GL.glColor3f(*ZONE_COLORS[6])
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+    drawPixel(x, y)
+    while y > y1:
+        if d < 0:
+            y -= 1
+            d += 2 * dx
+        else:
+            x += 1
+            y -= 1
+            d += 2 * (dx - dy)
+        drawPixel(x, y)
+    GL.glEnd()
 
 
 def drawLine_7(x0, y0, x1, y1):
-    """Right and down, shallow: x increases by 1."""
-    dx, dy = x1 - x0, y1 - y0
-    plot_bresenham_points(x0, y0, dx, -dy, 1, 0, 0, -1, 7)
+    """Zone 7: choose East or South-East."""
+    dx = x1 - x0
+    dy = y0 - y1
+    d = 2 * dy - dx
+    x = x0
+    y = y0
+
+    GL.glColor3f(*ZONE_COLORS[7])
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+    drawPixel(x, y)
+    while x < x1:
+        if d < 0:
+            x += 1
+            d += 2 * dy
+        else:
+            x += 1
+            y -= 1
+            d += 2 * (dy - dx)
+        drawPixel(x, y)
+    GL.glEnd()
 
 
 DRAW_FUNCTIONS = (
