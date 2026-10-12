@@ -6,14 +6,15 @@ from OpenGL import GL, GLUT
 
 WINDOW_WIDTH = 960
 WINDOW_HEIGHT = 540
+xmax = WINDOW_WIDTH
+ymax = WINDOW_HEIGHT
 
 # Circle center, movement per animation frame, and circle radius.
 xc = 0
 yc = 0
 dx = 2
 dy = -1
-r = 100
-
+r = 50
 
 def draw_circle():
     """Start in zone 0 and plot all eight symmetric points directly."""
@@ -78,12 +79,18 @@ def animate(_value):
     xc += dx
     yc += dy
 
-    if xc + r >= 480 or xc - r <= -480:
-        dx = -dx
-        xc += dx
-    if yc + r >= 270 or yc - r <= -270:
-        dy = -dy
-        yc += dy
+    if xc + r >= xmax // 2:
+        xc = xmax // 2 - r
+        dx = -abs(dx)
+    if xc - r <= -(xmax // 2):
+        xc = -(xmax // 2) + r
+        dx = abs(dx)
+    if yc + r >= ymax // 2:
+        yc = ymax // 2 - r
+        dy = -abs(dy)
+    if yc - r <= -(ymax // 2):
+        yc = -(ymax // 2) + r
+        dy = abs(dy)
 
     GLUT.glutPostRedisplay()
     GLUT.glutTimerFunc(16, animate, 0)  # About 60 animation updates per second.
