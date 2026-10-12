@@ -16,8 +16,19 @@ dx = 2
 dy = -1
 r = 50
 
+def draw8way_symmetry(x, y):
+    """After zone 0 is plotted, draw its seven reflected circle points."""
+    GL.glVertex2i(xc + y, yc + x)
+    GL.glVertex2i(xc - y, yc + x)
+    GL.glVertex2i(xc - x, yc + y)
+    GL.glVertex2i(xc - x, yc - y)
+    GL.glVertex2i(xc - y, yc - x)
+    GL.glVertex2i(xc + y, yc - x)
+    GL.glVertex2i(xc + x, yc - y)
+
+
 def draw_circle():
-    """Start in zone 0 and plot all eight symmetric points directly."""
+    """Draw zone 0 first, then reflect each point into the other zones."""
     x = r
     y = 0
     decision = 3 - 2 * r
@@ -27,15 +38,9 @@ def draw_circle():
     GL.glBegin(GL.GL_POINTS)
 
     while y <= x:
-        # Zone 0 starts at (xc + r, yc); mirror each step into the other zones.
+        # Draw zone 0, then its seven symmetric counterparts.
         GL.glVertex2i(xc + x, yc + y)
-        GL.glVertex2i(xc + y, yc + x)
-        GL.glVertex2i(xc - y, yc + x)
-        GL.glVertex2i(xc - x, yc + y)
-        GL.glVertex2i(xc - x, yc - y)
-        GL.glVertex2i(xc - y, yc - x)
-        GL.glVertex2i(xc + y, yc - x)
-        GL.glVertex2i(xc + x, yc - y)
+        draw8way_symmetry(x, y)
 
         if decision < 0:
             y += 1
