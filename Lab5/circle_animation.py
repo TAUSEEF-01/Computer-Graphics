@@ -15,20 +15,36 @@ dy = -1
 r = 100
 
 
-def plot_circle_points(x, y):
-    """Plot the eight points reflected across the circle's symmetry axes."""
-    points = (
-        # Begin at zone 0: (xc + r, yc), then reflect into all other zones.
-        (xc + x, yc + y), (xc + y, yc + x),
-        (xc - y, yc + x), (xc - x, yc + y),
-        (xc - x, yc - y), (xc - y, yc - x),
-        (xc + y, yc - x), (xc + x, yc - y),
-    )
-    for point_x, point_y in points:
-        GL.glVertex2i(point_x, point_y)
+def draw_circle():
+    """Start in zone 0 and plot all eight symmetric points directly."""
+    x = r
+    y = 0
+    decision = 3 - 2 * r
 
+    GL.glColor3f(0.0, 0.7, 1.0)
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
 
+    while y <= x:
+        # Zone 0 starts at (xc + r, yc); mirror each step into the other zones.
+        GL.glVertex2i(xc + x, yc + y)
+        GL.glVertex2i(xc + y, yc + x)
+        GL.glVertex2i(xc - y, yc + x)
+        GL.glVertex2i(xc - x, yc + y)
+        GL.glVertex2i(xc - x, yc - y)
+        GL.glVertex2i(xc - y, yc - x)
+        GL.glVertex2i(xc + y, yc - x)
+        GL.glVertex2i(xc + x, yc - y)
 
+        if decision < 0:
+            y += 1
+            decision += 4 * y + 2
+        else:
+            x -= 1
+            y += 1
+            decision += 4 * (y - x) + 2
+
+    GL.glEnd()
 
 
 def display():
@@ -94,24 +110,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-def draw_circle():
-    """Start in zone 0 and use symmetry to draw the other seven zones."""
-    x = r
-    y = 0
-    decision = 3 - 2 * r
-
-    GL.glColor3f(0.0, 0.7, 1.0)
-    GL.glPointSize(2.0)
-    GL.glBegin(GL.GL_POINTS)
-
-    while y <= x:
-        plot_circle_points(x, y)
-        if decision < 0:
-            y += 1
-            decision += 4 * y + 2
-        else:
-            x -= 1
-            y += 1
-            decision += 4 * (y - x) + 2
-
-    GL.glEnd()
