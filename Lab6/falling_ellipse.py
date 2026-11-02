@@ -9,7 +9,7 @@ WIDTH = 960
 HEIGHT = 600
 FLOOR_Y = 45
 FPS = 30
-r = 30.0
+r = 25.0
 xc = WIDTH // 2
 
 # Start with a = b = r, and preserve a*a + b*b = 2*r*r.
