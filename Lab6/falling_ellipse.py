@@ -150,13 +150,6 @@ class Animation:
 
 
 animation = Animation()
-paused = False
-
-
-def draw_text(x: int, y: int, text: str) -> None:
-    GL.glRasterPos2i(x, y)
-    for character in text:
-        GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_8_BY_13, ord(character))
 
 
 def display() -> None:
@@ -177,15 +170,6 @@ def display() -> None:
         GL.glVertex2i(WIDTH // 2 + x, round(animation.yc) + y)
     GL.glEnd()
 
-    GL.glColor3f(0.9, 0.92, 0.95)
-    draw_text(18, HEIGHT - 24, f"Lab 6: {animation.phase}" + (" [PAUSED]" if paused else ""))
-    draw_text(18, HEIGHT - 44, f"a = {animation.a:.3f}   b = {animation.b:.3f}")
-    draw_text(18, HEIGHT - 64, f"a/b = {animation.a / animation.b:.3f}  (maximum 2)")
-    draw_text(18, HEIGHT - 84, f"a^2+b^2 = {animation.a**2 + animation.b**2:.3f}")
-    draw_text(18, HEIGHT - 104, f"r^2 = {animation.r**2:.3f}")
-    draw_text(18, HEIGHT - 124, f"acceleration = {animation.acceleration:g} px/frame^2")
-    draw_text(18, HEIGHT - 144, f"velocity = {animation.velocity:.3f} px/frame (+ down, - up)")
-    draw_text(18, 18, "SPACE: pause/resume    N: step while paused    R: restart    ESC: quit")
     GLUT.glutSwapBuffers()
 
 
@@ -203,22 +187,12 @@ def reshape(width: int, height: int) -> None:
 
 
 def keyboard(key: bytes, _x: int, _y: int) -> None:
-    global paused
     if key == b"\x1b":
         GLUT.glutLeaveMainLoop()
-    elif key.lower() == b"r":
-        animation.reset()
-        paused = False
-    elif key == b" ":
-        paused = not paused
-    elif key.lower() == b"n" and paused:
-        animation.step()
-    GLUT.glutPostRedisplay()
 
 
 def animate(_value: int) -> None:
-    if not paused:
-        animation.step()
+    animation.step()
     GLUT.glutPostRedisplay()
     GLUT.glutTimerFunc(round(1000 / FPS), animate, 0)
 

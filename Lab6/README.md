@@ -45,13 +45,14 @@ the remaining fraction of a frame `dt = -velocity/g` to reach the apex exactly.
 The ellipse gradually recovers its circle shape in proportion to height gained,
 while maintaining the invariant. It reaches the top with zero velocity as a
 circle, then begins the next drop on the following frame. This sequence repeats
-until the window is closed or ESC is pressed. R restarts the current cycle.
+until the window is closed or ESC is pressed.
 This is a prescribed lab animation rather than a physical elastic collision.
 
 Set `R`, `FPS`, and the acceleration constants near the top of the script.
 Acceleration is per frame, so changing FPS changes playback duration.
 
-SPACE pauses/resumes; N advances one frame while paused; R restarts; ESC exits.
+The display shows only the animated shape and the floor, with no status text or
+control hints. Close the window or press ESC to exit.
 
 Run the focused mathematical checks:
 
