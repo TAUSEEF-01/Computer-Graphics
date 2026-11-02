@@ -9,6 +9,27 @@ Run from this Lab6 folder using the repository's existing Python environment:
 Uses the same PyOpenGL/freeglut setup as Lab5. No new dependencies are needed in
 the existing environment.
 
+## C++ version
+
+`falling_ellipse.cpp` implements the same animation with OpenGL/FreeGLUT,
+including the current `R = 30` setting. From Lab6, build and run:
+
+```powershell
+.\build_cpp.ps1
+.\falling_ellipse.exe
+```
+
+The build script reuses the repository's local 32-bit FreeGLUT static library
+and `C:\MinGW\bin\g++.exe`, as Lab4 does. It needs no separate FreeGLUT DLL.
+For another MinGW setup with FreeGLUT installed, an equivalent dynamic build is:
+
+```powershell
+g++ -std=c++11 -Wall -Wextra falling_ellipse.cpp -o falling_ellipse.exe -lfreeglut -lopengl32
+```
+
+For a dynamic build, the matching FreeGLUT DLL must be beside the executable
+or on PATH. Close the window or press ESC to exit either version.
+
 ## Mathematical interpretation
 
 The original statements `a = b = r` and `a*a + b*b = r*r` cannot both hold for a
