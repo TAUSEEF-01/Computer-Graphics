@@ -2,8 +2,42 @@
 
 import math
 import unittest
+from unittest.mock import patch
+from contextlib import ExitStack
 
-from falling_ellipse import Animation, FLOOR_Y, midpoint_ellipse
+import falling_ellipse as lab
+from falling_ellipse import FLOOR_Y
+
+
+# Test adapter for the lab's simple global variables and ordinary functions.
+class Animation:
+    def __init__(self, radius=30.0):
+        lab.r = radius
+        lab.reset_animation()
+
+    def __getattr__(self, name):
+        return getattr(lab, name)
+
+    def step(self):
+        lab.update_animation()
+
+    def reset(self):
+        lab.reset_animation()
+
+
+def midpoint_ellipse(a, b):
+    vertices = []
+    with ExitStack() as patches:
+        patches.enter_context(patch.object(lab, 'a', a))
+        patches.enter_context(patch.object(lab, 'b', b))
+        for name in ('glColor3f', 'glPointSize', 'glBegin', 'glEnd'):
+            patches.enter_context(patch.object(lab.GL, name))
+        patches.enter_context(patch.object(
+            lab.GL, 'glVertex2i',
+            side_effect=lambda x, y: vertices.append((x - lab.xc, y - round(lab.yc))),
+        ))
+        lab.draw_ellipse()
+    return vertices
 
 
 class AnimationTests(unittest.TestCase):

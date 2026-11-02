@@ -45,12 +45,17 @@ invariant parameter, not the starting circle radius.
 
 The outline uses the PDF's implicit function
 `f(x,y) = b*b*x*x + a*a*y*y - a*a*b*b`, four-way symmetry, and two regions.
-The first quadrant is traced from `(a,0)` toward `(0,b)`. The implementation
+The first quadrant is traced from `(a,0)` toward `(0,b)`. The C++ implementation
 swaps the axes for the midpoint calculation, then maps each local `(x,y)` to
 display `(y,x)`. Local E/SE steps become N/NW, and local S/SE steps become
 W/NW. The incremental formulas use coordinates before the pixel step.
 Only drawing rounds the semiaxes to integer pixels;
 the mathematical semiaxes preserve the invariant to floating-point precision.
+
+The Python version uses ordinary functions and global variables, like Lab5.
+`draw_ellipse()` starts directly at `(a,0)`, takes N/NW steps near the right
+edge, then W/NW steps near the top. `draw4way_symmetry()` plots four pixels
+directly with `glVertex2i`. There are no generators or animation classes.
 
 ## Movement
 

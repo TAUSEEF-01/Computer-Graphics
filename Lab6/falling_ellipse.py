@@ -1,160 +1,126 @@
-"""Lab 6: falling circle and midpoint ellipse deformation (PyOpenGL).
-
-r is the invariant parameter: a*a + b*b = r*r. Consequently the initial
-circle radius is r/sqrt(2), as agreed, rather than r. Run this file to animate.
-"""
+"""Lab 6: midpoint ellipse with a repeating drop, compression, and rebound."""
 
 import math
 import sys
-from dataclasses import dataclass, field
-from collections.abc import Iterator
-
 from OpenGL import GL, GLUT
 
 
-WIDTH, HEIGHT = 960, 600
+WIDTH = 960
+HEIGHT = 600
 FLOOR_Y = 45
-R = 30.0
 FPS = 30
-FALL_ACCELERATION = 5.0       # pixels/frame^2
-COMPRESSION_ACCELERATION = 1.0  # pixels/frame^2
+r = 30.0
+xc = WIDTH // 2
+
+# Keep a*a + b*b = r*r. The starting circle radius is r/sqrt(2).
+a = b = r / math.sqrt(2)
+top_y = HEIGHT - b - 2
+yc = top_y
+velocity = 0.0
+acceleration = 5.0
+phase = "FALLING"
+rise_start_y = 0.0
 
 
-def midpoint_ellipse(a: float, b: float) -> Iterator[tuple[int, int]]:
-    """Generate outline pixels using the PDF's two-region midpoint algorithm.
-
-    Round the semiaxes only for rasterization; keep the animation's mathematical
-    a and b as floats so their invariant is not damaged by integer rounding.
-    All decision increments below use the OLD x,y, before taking a step.
-    """
-    if not (math.isfinite(a) and math.isfinite(b) and a > 0 and b > 0):
-        raise ValueError("Ellipse semiaxes must be finite and positive.")
-    # Swap axes for the midpoint calculation: local x is vertical, local y
-    # is horizontal. Mapping back starts at (a,0) and ends toward (0,b).
-    rx, ry = max(1, round(b)), max(1, round(a))
-    rx2, ry2 = rx * rx, ry * ry
-    x, y = 0, ry
-
-    def symmetric_points() -> Iterator[tuple[int, int]]:
-        yield y, x
-        yield -y, x
-        yield y, -x
-        yield -y, -x
-
-    # Local Region 1: mapped to N or NW in display coordinates.
-    decision = ry2 - rx2 * ry + 0.25 * rx2
-    while ry2 * x < rx2 * y:
-        yield from symmetric_points()
-        if decision < 0:             # E: (x+1, y)
-            decision += ry2 * (2 * x + 3)
-        else:                        # SE: (x+1, y-1)
-            decision += ry2 * (2 * x + 3) + rx2 * (-2 * y + 2)
-            y -= 1
-        x += 1
-
-    # Local Region 2: mapped to W or NW in display coordinates.
-    decision = ry2 * (x + 0.5) ** 2 + rx2 * (y - 1) ** 2 - rx2 * ry2
-    while y >= 0:
-        yield from symmetric_points()
-        if decision < 0:             # SE: (x+1, y-1)
-            decision += ry2 * (2 * x + 2) + rx2 * (-2 * y + 3)
-            x += 1
-        else:                        # S: (x, y-1)
-            decision += rx2 * (-2 * y + 3)
-        y -= 1
+def reset_animation():
+    global a, b, yc, top_y, velocity, acceleration, phase, rise_start_y
+    a = b = r / math.sqrt(2)
+    top_y = HEIGHT - b - 2
+    yc = top_y
+    velocity = 0.0
+    acceleration = 5.0
+    phase = "FALLING"
+    rise_start_y = 0.0
 
 
-@dataclass
-class Animation:
-    """Frame-based movement; positive velocity is down, negative is up."""
-
-    r: float = R
-    a: float = field(init=False)
-    b: float = field(init=False)
-    yc: float = field(init=False)
-    velocity: float = field(init=False, default=0.0)
-    acceleration: float = field(init=False, default=FALL_ACCELERATION)
-    phase: str = field(init=False, default="FALLING")
-    rise_start_y: float = field(init=False, default=0.0)
-
-    @property
-    def top_y(self) -> float:
-        """Center height of the original circle at the top of the display."""
-        return HEIGHT - self.r / math.sqrt(2) - 2
-
-    def __post_init__(self) -> None:
-        initial_radius = self.r / math.sqrt(2)
-        if not math.isfinite(self.r) or initial_radius < 2:
-            raise ValueError("r must be finite and give a circle radius >= 2 pixels.")
-        if 2 * initial_radius >= HEIGHT - FLOOR_Y - 2:
-            raise ValueError("The initial circle does not fit above the floor.")
-        if 2 * self.r / math.sqrt(5) >= WIDTH / 2 - 2:
-            raise ValueError("The final ellipse does not fit inside the display.")
-        self.reset()
-
-    def reset(self) -> None:
-        self.a = self.b = self.r / math.sqrt(2)
-        self.yc = self.top_y
-        self.rise_start_y = 0.0
-        self.velocity = 0.0
-        self.acceleration = FALL_ACCELERATION
-        self.phase = "FALLING"
-
-    def step(self) -> None:
-        if self.phase == "FALLING":
-            # Acceleration changes velocity; velocity changes position.
-            self.velocity += self.acceleration
-            self.yc -= self.velocity
-            if self.yc - self.b <= FLOOR_Y:
-                self.yc = FLOOR_Y + self.b  # prevent floor penetration
-                self.phase = "COMPRESSING"
-                self.acceleration = COMPRESSION_ACCELERATION
-                # Ground contact stops the falling motion. Compression starts
-                # from rest with its own acceleration of 1 pixel/frame^2.
-                self.velocity = 0.0
-
-        elif self.phase == "COMPRESSING":
-            self.velocity += self.acceleration
-            # a=2b and a^2+b^2=r^2 imply b_min=r/sqrt(5).
-            minimum_b = self.r / math.sqrt(5)
-            self.b = max(minimum_b, self.b - self.velocity)
-            self.a = math.sqrt(self.r * self.r - self.b * self.b)
-            self.yc = FLOOR_Y + self.b  # bottom remains on the floor
-            if self.b <= minimum_b:
-                self.phase = "RISING"
-                self.rise_start_y = self.yc
-                self.acceleration = FALL_ACCELERATION
-                # v_final^2 = v_initial^2 - 2*g*h, with v_final=0.
-                # Choose launch speed to reach the original top exactly.
-                height = self.top_y - self.yc
-                self.velocity = -math.sqrt(2 * self.acceleration * height)
-
-        elif self.phase == "RISING":
-            # Integrate constant downward acceleration for one frame, or the
-            # remaining fraction of a frame if the apex occurs sooner.
-            time_to_top = -self.velocity / self.acceleration
-            dt = min(1.0, time_to_top)
-            self.yc -= self.velocity * dt + 0.5 * self.acceleration * dt * dt
-            self.velocity += self.acceleration * dt
-
-            # Recover the circle progressively during ascent. Computing a
-            # from b preserves a^2+b^2=r^2 throughout the rebound as well.
-            progress = (self.yc - self.rise_start_y) / (self.top_y - self.rise_start_y)
-            progress = min(1.0, max(0.0, progress))
-            minimum_b = self.r / math.sqrt(5)
-            circle_radius = self.r / math.sqrt(2)
-            self.b = minimum_b + (circle_radius - minimum_b) * progress
-            self.a = math.sqrt(self.r * self.r - self.b * self.b)
-            if time_to_top <= 1.0:
-                # Reach the top as a circle at rest, ready for the next drop.
-                # The next timer frame starts falling again automatically.
-                self.reset()
+def draw4way_symmetry(x, y):
+    GL.glVertex2i(xc + x, round(yc) + y)
+    GL.glVertex2i(xc - x, round(yc) + y)
+    GL.glVertex2i(xc + x, round(yc) - y)
+    GL.glVertex2i(xc - x, round(yc) - y)
 
 
-animation = Animation()
+def draw_ellipse():
+    # Start at (a,0) and move toward (0,b).
+    rx = max(1, round(a))
+    ry = max(1, round(b))
+    a2 = rx * rx
+    b2 = ry * ry
+    x = rx
+    y = 0
+
+    GL.glColor3f(0.15, 0.8, 1.0)
+    GL.glPointSize(2.0)
+    GL.glBegin(GL.GL_POINTS)
+
+    # Near the right edge: increase y, choosing N or NW.
+    decision = b2 * (x - 0.5) ** 2 + a2 - a2 * b2
+    while a2 * y < b2 * x:
+        draw4way_symmetry(x, y)
+        if decision < 0:  # N
+            decision += a2 * (2 * y + 3)
+        else:             # NW
+            decision += a2 * (2 * y + 3) + b2 * (-2 * x + 2)
+            x -= 1
+        y += 1
+
+    # Near the top: decrease x, choosing W or NW.
+    decision = b2 * (x - 1) ** 2 + a2 * (y + 0.5) ** 2 - a2 * b2
+    while x >= 0:
+        draw4way_symmetry(x, y)
+        if decision < 0:  # NW
+            decision += b2 * (-2 * x + 3) + a2 * (2 * y + 2)
+            y += 1
+        else:             # W
+            decision += b2 * (-2 * x + 3)
+        x -= 1
+
+    GL.glEnd()
 
 
-def display() -> None:
+def update_animation():
+    global a, b, yc, velocity, acceleration, phase, rise_start_y
+
+    if phase == "FALLING":
+        velocity += acceleration
+        yc -= velocity
+        if yc - b <= FLOOR_Y:
+            yc = FLOOR_Y + b
+            phase = "COMPRESSING"
+            acceleration = 1.0
+            velocity = 0.0
+
+    elif phase == "COMPRESSING":
+        velocity += acceleration
+        minimum_b = r / math.sqrt(5)
+        b = max(minimum_b, b - velocity)
+        a = math.sqrt(r * r - b * b)
+        yc = FLOOR_Y + b
+        if b <= minimum_b:
+            phase = "RISING"
+            rise_start_y = yc
+            acceleration = 5.0
+            # Launch speed needed to reach the original top with zero velocity.
+            velocity = -math.sqrt(2 * acceleration * (top_y - yc))
+
+    elif phase == "RISING":
+        # Use the remaining fraction of a frame when reaching the top.
+        time_to_top = -velocity / acceleration
+        dt = min(1.0, time_to_top)
+        yc -= velocity * dt + 0.5 * acceleration * dt * dt
+        velocity += acceleration * dt
+
+        # Gradually recover the circle while preserving a*a + b*b = r*r.
+        progress = (yc - rise_start_y) / (top_y - rise_start_y)
+        progress = min(1.0, max(0.0, progress))
+        minimum_b = r / math.sqrt(5)
+        b = minimum_b + (r / math.sqrt(2) - minimum_b) * progress
+        a = math.sqrt(r * r - b * b)
+        if time_to_top <= 1.0:
+            reset_animation()
+
+
+def display():
     GL.glClear(GL.GL_COLOR_BUFFER_BIT)
     GL.glLoadIdentity()
 
@@ -164,21 +130,14 @@ def display() -> None:
     GL.glVertex2i(WIDTH, FLOOR_Y)
     GL.glEnd()
 
-    # Plot individual pixels, not an OpenGL ellipse primitive.
-    GL.glColor3f(0.15, 0.8, 1.0)
-    GL.glPointSize(2.0)
-    GL.glBegin(GL.GL_POINTS)
-    for x, y in midpoint_ellipse(animation.a, animation.b):
-        GL.glVertex2i(WIDTH // 2 + x, round(animation.yc) + y)
-    GL.glEnd()
-
+    draw_ellipse()
     GLUT.glutSwapBuffers()
 
 
-def reshape(width: int, height: int) -> None:
-    # Preserve proportions if the user resizes the window.
+def reshape(width, height):
     scale = min(max(1, width) / WIDTH, max(1, height) / HEIGHT)
-    viewport_width, viewport_height = max(1, round(WIDTH * scale)), max(1, round(HEIGHT * scale))
+    viewport_width = max(1, round(WIDTH * scale))
+    viewport_height = max(1, round(HEIGHT * scale))
     GL.glViewport((width - viewport_width) // 2, (height - viewport_height) // 2,
                   viewport_width, viewport_height)
     GL.glMatrixMode(GL.GL_PROJECTION)
@@ -188,18 +147,18 @@ def reshape(width: int, height: int) -> None:
     GL.glLoadIdentity()
 
 
-def keyboard(key: bytes, _x: int, _y: int) -> None:
+def keyboard(key, _x, _y):
     if key == b"\x1b":
         GLUT.glutLeaveMainLoop()
 
 
-def animate(_value: int) -> None:
-    animation.step()
+def animate(_value):
+    update_animation()
     GLUT.glutPostRedisplay()
     GLUT.glutTimerFunc(round(1000 / FPS), animate, 0)
 
 
-def main() -> None:
+def main():
     GLUT.glutInit([sys.argv[0]])
     GLUT.glutInitDisplayMode(GLUT.GLUT_DOUBLE | GLUT.GLUT_RGB)
     GLUT.glutInitWindowSize(WIDTH, HEIGHT)
