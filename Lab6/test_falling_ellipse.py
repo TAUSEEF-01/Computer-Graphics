@@ -64,16 +64,16 @@ class AnimationTests(unittest.TestCase):
                 initial_y = state.yc
                 completed_cycles = 0
                 reached_phases = {state.phase}
-                self.assertAlmostEqual(state.a, radius / math.sqrt(2))
+                self.assertAlmostEqual(state.a, radius)
                 for _ in range(1000):
                     old_a, old_b = state.a, state.b
                     old_phase = state.phase
                     state.step()
                     reached_phases.add(state.phase)
-                    self.assertAlmostEqual(state.a**2 + state.b**2, radius**2)
+                    self.assertAlmostEqual(state.a**2 + state.b**2, 2 * radius**2)
                     self.assertLessEqual(state.a / state.b, 2 + 1e-12)
                     self.assertGreaterEqual(state.yc - state.b, FLOOR_Y - 1e-10)
-                    self.assertLessEqual(state.yc + state.b, initial_y + radius / math.sqrt(2) + 1e-10)
+                    self.assertLessEqual(state.yc + state.b, initial_y + radius + 1e-10)
                     if old_phase in ("FALLING", "COMPRESSING"):
                         self.assertGreaterEqual(state.a, old_a - 1e-12)
                         self.assertLessEqual(state.b, old_b + 1e-12)
@@ -84,7 +84,7 @@ class AnimationTests(unittest.TestCase):
                         self.assertAlmostEqual(state.yc - state.b, FLOOR_Y)
                     if old_phase == "COMPRESSING" and state.phase == "RISING":
                         self.assertAlmostEqual(state.a, 2 * state.b)
-                        self.assertAlmostEqual(state.b, radius / math.sqrt(5))
+                        self.assertAlmostEqual(state.b, radius * math.sqrt(2 / 5))
                     if old_phase == "RISING" and state.phase == "FALLING":
                         completed_cycles += 1
                         self.assertEqual(state.yc, initial_y)
@@ -98,7 +98,7 @@ class AnimationTests(unittest.TestCase):
                 self.assertEqual(reached_phases, {"FALLING", "COMPRESSING", "RISING"})
                 self.assertEqual(state.yc, initial_y)
                 self.assertEqual(state.velocity, 0)
-                self.assertAlmostEqual(state.b, radius / math.sqrt(2))
+                self.assertAlmostEqual(state.b, radius)
                 self.assertEqual(state.a, state.b)
                 state.step()
                 self.assertEqual(state.phase, "FALLING")
@@ -172,3 +172,4 @@ class AnimationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

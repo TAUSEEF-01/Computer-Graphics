@@ -12,8 +12,8 @@ FPS = 30
 r = 30.0
 xc = WIDTH // 2
 
-# Keep a*a + b*b = r*r. The starting circle radius is r/sqrt(2).
-a = b = r / math.sqrt(2)
+# Start with a = b = r, and preserve a*a + b*b = 2*r*r.
+a = b = r
 top_y = HEIGHT - b - 2
 yc = top_y
 velocity = 0.0
@@ -24,7 +24,7 @@ rise_start_y = 0.0
 
 def reset_animation():
     global a, b, yc, top_y, velocity, acceleration, phase, rise_start_y
-    a = b = r / math.sqrt(2)
+    a = b = r
     top_y = HEIGHT - b - 2
     yc = top_y
     velocity = 0.0
@@ -92,9 +92,9 @@ def update_animation():
 
     elif phase == "COMPRESSING":
         velocity += acceleration
-        minimum_b = r / math.sqrt(5)
+        minimum_b = r * math.sqrt(2 / 5)
         b = max(minimum_b, b - velocity)
-        a = math.sqrt(r * r - b * b)
+        a = math.sqrt(2 * r * r - b * b)
         yc = FLOOR_Y + b
         if b <= minimum_b:
             phase = "RISING"
@@ -110,12 +110,12 @@ def update_animation():
         yc -= velocity * dt + 0.5 * acceleration * dt * dt
         velocity += acceleration * dt
 
-        # Gradually recover the circle while preserving a*a + b*b = r*r.
+        # Gradually recover the circle while preserving a*a + b*b = 2*r*r.
         progress = (yc - rise_start_y) / (top_y - rise_start_y)
         progress = min(1.0, max(0.0, progress))
-        minimum_b = r / math.sqrt(5)
-        b = minimum_b + (r / math.sqrt(2) - minimum_b) * progress
-        a = math.sqrt(r * r - b * b)
+        minimum_b = r * math.sqrt(2 / 5)
+        b = minimum_b + (r - minimum_b) * progress
+        a = math.sqrt(2 * r * r - b * b)
         if time_to_top <= 1.0:
             reset_animation()
 
@@ -177,3 +177,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

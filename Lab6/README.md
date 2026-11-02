@@ -32,16 +32,17 @@ or on PATH. Close the window or press ESC to exit either version.
 
 ## Mathematical interpretation
 
-The original statements `a = b = r` and `a*a + b*b = r*r` cannot both hold for a
-nonzero r. This implementation follows the selected interpretation: preserve
-`a*a + b*b = r*r`. Here a and b are horizontal and vertical semiaxes; r is the
-invariant parameter, not the starting circle radius.
+The Python version starts with `a = b = r`, so r is the initial circle radius.
+It preserves `a*a + b*b = 2*r*r` during compression and rebound.
 
-- Initial circle: `a = b = r / sqrt(2)`.
-- During compression: decrease b and compute `a = sqrt(r*r - b*b)`.
-- Maximum compression at `a = 2*b`: `b = r/sqrt(5)` and `a = 2*r/sqrt(5)`.
-- During the rebound, b increases back to `r/sqrt(2)` while a is recomputed
-  from the invariant. The shape becomes a circle at the original top height.
+- Initial circle: `a = b = r`.
+- During compression: decrease b and compute `a = sqrt(2*r*r - b*b)`.
+- Maximum compression at `a = 2*b`: `b = r*sqrt(2/5)` and `a = 2*b`.
+- During the rebound, b increases back to r while a is recomputed from the
+  invariant. The shape becomes a circle at the original top height.
+
+The C++ version retains its earlier initialization `a = b = r/sqrt(2)` and
+invariant `a*a + b*b = r*r`.
 
 The outline uses the PDF's implicit function
 `f(x,y) = b*b*x*x + a*a*y*y - a*a*b*b`, four-way symmetry, and two regions.
@@ -63,7 +64,7 @@ Acceleration is interpreted as pixels/frame squared; speed is pixels/frame.
 Each falling frame applies `velocity += 5`, then `yc -= velocity`.
 At ground contact, clamp the bottom to the floor and stop the falling velocity.
 Compression starts from rest with `velocity += 1`, then `b -= velocity`, clamped
-at `r/sqrt(5)`. Set `yc = FLOOR_Y + b` so the bottom stays on the floor.
+at `r*sqrt(2/5)` in Python (`r/sqrt(5)` in C++). Set `yc = FLOOR_Y + b` so the bottom stays on the floor.
 At maximum deformation, the shape launches upward. With downward acceleration
 `g = 5`, a launch speed `sqrt(2*g*h)` reaches the original top with zero speed;
 h is the center's height difference from maximum compression to the top.
@@ -76,7 +77,7 @@ circle, then begins the next drop on the following frame. This sequence repeats
 until the window is closed or ESC is pressed.
 This is a prescribed lab animation rather than a physical elastic collision.
 
-Set `R`, `FPS`, and the acceleration constants near the top of the script.
+Set `r` and `FPS` near the top of the Python script; acceleration is set in the movement functions.
 Acceleration is per frame, so changing FPS changes playback duration.
 
 The display shows only the animated shape and the floor, with no status text or
@@ -87,3 +88,4 @@ Run the focused mathematical checks:
 ```powershell
 ..\.venv\Scripts\python.exe -m unittest -v test_falling_ellipse.py
 ```
+
