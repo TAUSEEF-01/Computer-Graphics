@@ -20,8 +20,10 @@ using Pixel = std::pair<int, int>;
 std::vector<Pixel> midpointEllipse(double a, double b)
 {
     // Round only for drawing. Animation keeps floating-point semiaxes.
-    const int rx = std::max(1, static_cast<int>(std::round(a)));
-    const int ry = std::max(1, static_cast<int>(std::round(b)));
+    // Swap axes locally: x is vertical, y is horizontal. Map (x,y) back
+    // to (y,x) to trace from (a,0) toward (0,b).
+    const int rx = std::max(1, static_cast<int>(std::round(b)));
+    const int ry = std::max(1, static_cast<int>(std::round(a)));
     const double rx2 = static_cast<double>(rx) * rx;
     const double ry2 = static_cast<double>(ry) * ry;
     int x = 0, y = ry;
@@ -29,13 +31,13 @@ std::vector<Pixel> midpointEllipse(double a, double b)
 
     auto plotFour = [&]()
     {
-        pixels.emplace_back(x, y);
-        pixels.emplace_back(-x, y);
-        pixels.emplace_back(x, -y);
-        pixels.emplace_back(-x, -y);
+        pixels.emplace_back(y, x);
+        pixels.emplace_back(-y, x);
+        pixels.emplace_back(y, -x);
+        pixels.emplace_back(-y, -x);
     };
 
-    // Region 1: midpoint (x+1, y-1/2); choose E or SE.
+    // Local Region 1: midpoint (x+1, y-1/2); maps to N or NW.
     // All increments use the OLD coordinates, before moving.
     double decision = ry2 - rx2 * ry + 0.25 * rx2;
     while (ry2 * x < rx2 * y)
@@ -53,7 +55,7 @@ std::vector<Pixel> midpointEllipse(double a, double b)
         ++x;
     }
 
-    // Region 2: midpoint (x+1/2, y-1); choose S or SE.
+    // Local Region 2: midpoint (x+1/2, y-1); maps to W or NW.
     decision = ry2 * (x + 0.5) * (x + 0.5) + rx2 * (y - 1) * (y - 1) - rx2 * ry2;
     while (y >= 0)
     {

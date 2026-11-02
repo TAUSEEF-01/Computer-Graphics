@@ -105,7 +105,14 @@ class AnimationTests(unittest.TestCase):
     def test_midpoint_symmetry_continuity_and_curve_distance(self):
         for a, b in ((64, 64), (80, 40), (40, 80), (1, 1), (2, 1)):
             with self.subTest(a=a, b=b):
-                points = set(midpoint_ellipse(a, b))
+                outline = list(midpoint_ellipse(a, b))
+                quadrant = outline[::4]
+                self.assertEqual(quadrant[0], (a, 0))
+                self.assertEqual(quadrant[-1], (0, b))
+                for previous, current in zip(quadrant, quadrant[1:]):
+                    self.assertLessEqual(current[0], previous[0])
+                    self.assertGreaterEqual(current[1], previous[1])
+                points = set(outline)
                 self.assertIn((0, b), points)
                 self.assertIn((a, 0), points)
                 for x, y in points:

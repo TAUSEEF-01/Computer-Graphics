@@ -29,17 +29,19 @@ def midpoint_ellipse(a: float, b: float) -> Iterator[tuple[int, int]]:
     """
     if not (math.isfinite(a) and math.isfinite(b) and a > 0 and b > 0):
         raise ValueError("Ellipse semiaxes must be finite and positive.")
-    rx, ry = max(1, round(a)), max(1, round(b))
+    # Swap axes for the midpoint calculation: local x is vertical, local y
+    # is horizontal. Mapping back starts at (a,0) and ends toward (0,b).
+    rx, ry = max(1, round(b)), max(1, round(a))
     rx2, ry2 = rx * rx, ry * ry
     x, y = 0, ry
 
     def symmetric_points() -> Iterator[tuple[int, int]]:
-        yield x, y
-        yield -x, y
-        yield x, -y
-        yield -x, -y
+        yield y, x
+        yield -y, x
+        yield y, -x
+        yield -y, -x
 
-    # Region 1: |dy/dx| < 1; choose E or SE, using M=(x+1, y-1/2).
+    # Local Region 1: mapped to N or NW in display coordinates.
     decision = ry2 - rx2 * ry + 0.25 * rx2
     while ry2 * x < rx2 * y:
         yield from symmetric_points()
@@ -50,7 +52,7 @@ def midpoint_ellipse(a: float, b: float) -> Iterator[tuple[int, int]]:
             y -= 1
         x += 1
 
-    # Region 2: |dy/dx| >= 1; choose S or SE, using M=(x+1/2, y-1).
+    # Local Region 2: mapped to W or NW in display coordinates.
     decision = ry2 * (x + 0.5) ** 2 + rx2 * (y - 1) ** 2 - rx2 * ry2
     while y >= 0:
         yield from symmetric_points()
