@@ -1,0 +1,34 @@
+<div id="bresenham-decision-visual">
+  <svg viewBox="0 0 720 370" role="img" aria-labelledby="b-title b-desc" style="width:100%;height:auto;color:var(--foreground)">
+    <title id="b-title">Bresenham circle decision in zone zero</title>
+    <desc id="b-desc">At a current circle pixel, the next row offers a straight pixel and a diagonal pixel. The midpoint between them is compared with the ideal circle to choose the closer pixel.</desc>
+    <defs>
+      <marker id="b-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+      </marker>
+    </defs>
+    <g fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M60 300 H390" marker-end="url(#b-arrow)" />
+      <path d="M60 300 V45" marker-end="url(#b-arrow)" />
+      <path d="M60 300 A220 220 0 0 0 215.6 144.4" stroke-width="2.5" />
+      <path d="M256 211 H263" stroke-dasharray="3 3" />
+      <path d="M257.45 211 V224" stroke-dasharray="3 3" />
+      <path d="M258 212 L258 211" marker-end="url(#b-arrow)" />
+      <path d="M258 212 L256.9 211" marker-end="url(#b-arrow)" />
+    </g>
+    <g fill="currentColor" font-family="sans-serif" font-size="14">
+      <text x="393" y="305">x</text>
+      <text x="52" y="38">y</text>
+      <text x="202" y="151">ideal circle</text>
+      <text x="245" y="220">P</text>
+      <text x="266" y="207">vertical: (x, y + 1)</text>
+      <text x="264" y="229">diagonal: (x − 1, y + 1)</text>
+      <text x="235" y="247">midpoint: (x − ½, y + 1)</text>
+      <text x="264" y="270">zone 0 moves right</text>
+    </g>
+    <circle cx="258" cy="212" r="5" fill="var(--viz-series-1)" />
+    <circle cx="258" cy="211" r="4" fill="var(--viz-series-2)" />
+    <circle cx="256.9" cy="211" r="4" fill="var(--viz-series-3)" />
+    <circle cx="257.45" cy="211" r="2.5" fill="var(--viz-series-4)" />
+  </svg>
+</div>
